@@ -1,12 +1,55 @@
-import React from "react";
-import { Image, StyleSheet, Text, TextInput, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Home from "../../assets/Home.png";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import AntDesign from "react-native-vector-icons/AntDesign";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import Entypo from "react-native-vector-icons/Entypo";
+import { dataRef, storage } from "../../firebaseConfig";
+import { FlatList } from "react-native-gesture-handler";
 
 const Homepage = ({ navigation }) => {
+  const [items, setItems] = useState([]);
+  useEffect(() => {
+    const fetchData = dataRef.ref("Tasks").on("value", (snapshot) => {
+      const fetchedData = snapshot.val();
+      console.log("Fetched Data:", fetchedData); // Log fetched data
+      if (fetchedData) {
+        const dataArr = Object.keys(fetchedData).map((key) => ({
+          id: key,
+          ...fetchedData[key],
+        }));
+        setItems(dataArr);
+      } else {
+        setItems([]);
+      }
+    });
+
+    return () => dataRef.ref("Tasks").off("value", fetchData);
+  }, []);
+
+  const renderItem = ({ item, index }) => (
+    <TouchableOpacity
+      style={styles.item}
+      onPress={() => navigation.navigate("Detail", { itemId: item.id })}
+    >
+      <View style={styles.item}>
+        <Text style={styles.title}>{index}</Text>
+        <Text style={styles.title}>{item.title}</Text>
+        <Text style={styles.title}>{item.desc}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
       <View style={styles.imageContainer}>
@@ -76,39 +119,44 @@ const Homepage = ({ navigation }) => {
               <Text style={{ color: "#999999", fontSize: 20 }}>Suggested</Text>
             </View>
           </View>
-
           <View style={styles.containercolumn}>
-            <View style={styles.column}>
-              <Text style={styles.notesTitle}>Untitled note</Text>
-              <View style={{ flex: 1, justifyContent: "flex-end" }}>
-                <Text style={styles.notesFooter}>4 min ago</Text>
+            <ScrollView horizontal>
+              {items.map((item, index) => (
+                <View key={item.id} style={styles.column}>
+                  <Text style={styles.notesTitle}>{index}</Text>
+                  <Text style={styles.notesTitle}>{item.title}</Text>
+                  <Text style={styles.notesTitle}>{item.desc}</Text>
+                  <View style={{ flex: 1, justifyContent: "flex-end" }}>
+                    <Text style={styles.notesFooter}>4 min ago</Text>
+                  </View>
+                </View>
+              ))}
+              <View style={styles.column}>
+                <View style={styles.icon3}>
+                  <MaterialCommunityIcons
+                    name="playlist-plus"
+                    size={40}
+                    style={{
+                      backgroundColor: "#00a92c",
+                      color: "#1a1a1a",
+                      borderRadius: 30,
+                      padding: 10,
+                    }}
+                  />
+                  <Text
+                    style={{
+                      color: "white",
+                      fontSize: 17,
+                      width: "60%",
+                      textAlign: "center",
+                      paddingTop: 10,
+                    }}
+                  >
+                    Create new note
+                  </Text>
+                </View>
               </View>
-            </View>
-            <View style={styles.column}>
-              <View style={styles.icon3}>
-                <MaterialCommunityIcons
-                  name="playlist-plus"
-                  size={40}
-                  style={{
-                    backgroundColor: "#00a92c",
-                    color: "#1a1a1a",
-                    borderRadius: 30,
-                    padding: 10,
-                  }}
-                />
-                <Text
-                  style={{
-                    color: "white",
-                    fontSize: 17,
-                    width: "60%",
-                    textAlign: "center",
-                    paddingTop: 10,
-                  }}
-                >
-                  Create new note
-                </Text>
-              </View>
-            </View>
+            </ScrollView>
           </View>
         </View>
         <View style={styles.section2}>
@@ -278,7 +326,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     height: 230,
     marginTop: 20,
-    width: "80%",
+    width: "auto",
     marginBottom: 20,
   },
   column: {
